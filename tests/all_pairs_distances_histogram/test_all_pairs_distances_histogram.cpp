@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -10,21 +10,18 @@
 
 #include "test_all_pairs_distances_histogram.h"
 
-#include "metrics/AllPairsDistancesHistogram.h"
-
-#include "mpi-wrapper/MPIInfo.h"
+#include "metrics/geometry/AllPairsDistancesHistogram.h"
 
 #include <gtest/gtest.h>
-#include <spdlog/spdlog.h>
 
+#include <mpi-wrapper/core/MPIInfo.h>
+
+#include <cstddef>
 #include <iostream>
+#include <vector>
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -55,11 +52,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthStandard) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUU) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -94,11 +87,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUU) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -125,11 +114,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthFull) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthStandardFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -160,11 +145,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthStandardFourRanksDummy) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUUFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -199,11 +180,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUUFourRanksDummy) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthFullFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -230,11 +207,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthFullFourRanksDummy) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -269,11 +242,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthStandardFourRanks) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUUFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -312,11 +281,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUUFourRanks) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testWidthFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -347,11 +312,7 @@ TEST_F(AllPairsDistancesHistogramTest, testWidthFullFourRanks) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -378,11 +339,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountStandard) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountStandardUU) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -405,11 +362,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountStandardUU) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -442,11 +395,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountFull) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountStandardFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -473,11 +422,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountStandardFourRanksDummy) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountStandardUUFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -502,11 +447,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountStandardUUFourRanksDummy) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountFullFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -539,11 +480,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountFullFourRanksDummy) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -574,11 +511,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountStandardFourRanks) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountStandardUUFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -607,11 +540,7 @@ TEST_F(AllPairsDistancesHistogramTest, testCountStandardUUFourRanks) {
 }
 
 TEST_F(AllPairsDistancesHistogramTest, testCountFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -645,4 +574,200 @@ TEST_F(AllPairsDistancesHistogramTest, testCountFullFourRanks) {
     ASSERT_NEAR(borders[4], 13.8 / 7 * 4, 1e-6);
     ASSERT_NEAR(borders[5], 13.8 / 7 * 5, 1e-6);
     ASSERT_NEAR(borders[6], 13.8 / 7 * 6, 1e-6);
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testCountThrowsOnOutOfRangeDistance) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_one_rank_graph();
+
+    // The largest pairwise distance is about 11.97, so a maximum of 6.0 must make the histogram throw.
+    ASSERT_ANY_THROW((void) AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 0.0, 6.0, 3));
+
+    // The smallest pairwise distance is about 1.17, so a minimum of 2.0 must make the histogram throw.
+    ASSERT_ANY_THROW((void) AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 2.0, 14.0, 6));
+}
+
+namespace {
+/**
+ * @brief Checks the borders and the counts of one pairwise-distance histogram against the expected vectors.
+ * @param histogram The histogram to check
+ * @param expected_borders The expected lower bin borders
+ * @param expected_counts The expected number of node pairs per bin
+ */
+template <typename HistogramType>
+void expect_distance_histogram(const HistogramType& histogram, const std::vector<double>& expected_borders,
+                               const std::vector<std::size_t>& expected_counts) {
+    const auto borders = histogram.get_borders();
+    const auto counts = histogram.get_counts();
+
+    ASSERT_EQ(borders.size(), expected_borders.size());
+    ASSERT_EQ(counts.size(), expected_counts.size());
+
+    for (auto bin = std::size_t{ 0 }; bin < expected_counts.size(); ++bin) {
+        ASSERT_NEAR(borders[bin], expected_borders[bin], 1e-6) << "at the bin " << bin;
+        ASSERT_EQ(counts[bin], expected_counts[bin]) << "at the bin " << bin;
+    }
+}
+} // namespace
+
+// The standard and the undirected, unit-weight seven-rank graph hold the same nodes at the same
+// positions, so their 2415 pairwise distances agree; the full graph has 63 nodes and 1953 pairs.
+
+TEST_F(AllPairsDistancesHistogramTest, testWidthStandardSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph_on_one_rank();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_width(graph, 5.0);
+
+    // The values serve as standard for the seven-rank test
+    expect_distance_histogram(histogram, { 0.0, 5.0, 10.0, 15.0, 20.0 }, { 573, 288, 1033, 303, 218 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUUSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph_on_one_rank();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_width(graph, 5.0);
+
+    // The values serve as standard for the seven-rank test
+    expect_distance_histogram(histogram, { 0.0, 5.0, 10.0, 15.0, 20.0 }, { 573, 288, 1033, 303, 218 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testWidthFullSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph_on_one_rank();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_width(graph, 5.0);
+
+    // The values serve as standard for the seven-rank test
+    expect_distance_histogram(histogram, { 0.0, 5.0, 10.0, 15.0, 20.0 }, { 495, 214, 860, 247, 137 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testCountStandardSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph_on_one_rank();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 0.0, 25.5, 3);
+
+    // The values serve as standard for the seven-rank test
+    expect_distance_histogram(histogram, { 0.0, 8.5, 17.0 }, { 763, 1299, 353 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testCountStandardUUSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph_on_one_rank();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 0.0, 25.5, 3);
+
+    // The values serve as standard for the seven-rank test
+    expect_distance_histogram(histogram, { 0.0, 8.5, 17.0 }, { 763, 1299, 353 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testCountFullSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph_on_one_rank();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 0.0, 25.5, 3);
+
+    // The values serve as standard for the seven-rank test
+    expect_distance_histogram(histogram, { 0.0, 8.5, 17.0 }, { 636, 1092, 225 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testWidthStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_width(graph, 5.0);
+
+    // The values are the corresponding ones from the one-rank version
+    expect_distance_histogram(histogram, { 0.0, 5.0, 10.0, 15.0, 20.0 }, { 573, 288, 1033, 303, 218 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testWidthStandardUUSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_width(graph, 5.0);
+
+    // The values are the corresponding ones from the one-rank version
+    expect_distance_histogram(histogram, { 0.0, 5.0, 10.0, 15.0, 20.0 }, { 573, 288, 1033, 303, 218 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testWidthFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_width(graph, 5.0);
+
+    // The values are the corresponding ones from the one-rank version
+    expect_distance_histogram(histogram, { 0.0, 5.0, 10.0, 15.0, 20.0 }, { 495, 214, 860, 247, 137 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testCountStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 0.0, 25.5, 3);
+
+    // The values are the corresponding ones from the one-rank version
+    expect_distance_histogram(histogram, { 0.0, 8.5, 17.0 }, { 763, 1299, 353 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testCountStandardUUSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 0.0, 25.5, 3);
+
+    // The values are the corresponding ones from the one-rank version
+    expect_distance_histogram(histogram, { 0.0, 8.5, 17.0 }, { 763, 1299, 353 });
+}
+
+TEST_F(AllPairsDistancesHistogramTest, testCountFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto histogram = AllPairsDistancesHistogram::compute_pair_distances_fixed_bin_count(graph, 0.0, 25.5, 3);
+
+    // The values are the corresponding ones from the one-rank version
+    expect_distance_histogram(histogram, { 0.0, 8.5, 17.0 }, { 636, 1092, 225 });
 }

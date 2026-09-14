@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(ScalableGraphAlgorithm)
+project(neurograph)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -46,12 +46,12 @@ include(cmake/Utils.cmake)
 
 add_subdirectory(source)
 
-option(SCA_ENABLE_TESTING "Enables the testing of the scalable graph algorithms" ON)
+option(NEUROGRAPH_ENABLE_TESTING "Enables the testing of neurograph" ON)
 
-if(SCA_ENABLE_TESTING MATCHES ON)
-	message("Using tests for the scalable graph algorithms")
+if(NEUROGRAPH_ENABLE_TESTING)
+	message("Using tests for neurograph")
 	enable_testing()
 	add_subdirectory(tests)
 else()
-	message("Not using tests for the scalable graph algorithms")
+	message("Not using tests for neurograph")
 endif()

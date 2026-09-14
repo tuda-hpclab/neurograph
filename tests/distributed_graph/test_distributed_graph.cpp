@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -17,19 +17,20 @@
 #include "graph/GraphTypes.h"
 #include "utility/Vec3.h"
 
-#include "mpi-wrapper/MPIInfo.h"
-
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <spdlog/spdlog.h>
+
+#include <mpi-wrapper/core/MPIInfo.h>
 
 #include <algorithm>
+#include <array>
 #include <concepts>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <set>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -46,11 +47,7 @@ template <std::equality_comparable T>
 }
 
 TEST_F(DistributedGraphTest, testLoadNodes) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -158,11 +155,7 @@ TEST_F(DistributedGraphTest, testLoadNodes) {
 }
 
 TEST_F(DistributedGraphTest, testLoadNodesAndArcs) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -292,15 +285,15 @@ TEST_F(DistributedGraphTest, testLoadNodesAndArcs) {
         }
     };
 
-    const auto in_arc_distribution = graph.get_number_local_in_arc_distribution();
-    const auto out_arc_distribution = graph.get_number_local_out_arc_distribution();
+    const auto in_arc_info_distribution = graph.get_local_in_arc_info_distribution();
+    const auto out_arc_info_distribution = graph.get_local_out_arc_info_distribution();
 
-    ASSERT_EQ(in_arc_distribution.size(), node_id_type{ 10 });
-    ASSERT_EQ(out_arc_distribution.size(), node_id_type{ 10 });
+    ASSERT_EQ(in_arc_info_distribution.size(), node_id_type{ 10 });
+    ASSERT_EQ(out_arc_info_distribution.size(), node_id_type{ 10 });
 
     for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 10 }; ++node_id) {
-        ASSERT_EQ(in_arc_distribution[node_id], graph.get_number_in_arcs(0, node_id));
-        ASSERT_EQ(out_arc_distribution[node_id], graph.get_number_out_arcs(0, node_id));
+        ASSERT_EQ(in_arc_info_distribution[node_id], graph.get_in_arc_info(0, node_id));
+        ASSERT_EQ(out_arc_info_distribution[node_id], graph.get_out_arc_info(0, node_id));
     }
 
     for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 10 }; ++node_id) {
@@ -382,11 +375,7 @@ TEST_F(DistributedGraphTest, testLoadNodesAndArcs) {
 }
 
 TEST_F(DistributedGraphTest, testLoadNodesFile) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -488,11 +477,7 @@ TEST_F(DistributedGraphTest, testLoadNodesFile) {
 }
 
 TEST_F(DistributedGraphTest, testLoadNodesAndArcsFile) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -678,15 +663,15 @@ TEST_F(DistributedGraphTest, testLoadNodesAndArcsFile) {
         }
     };
 
-    const auto in_arc_distribution = graph.get_number_local_in_arc_distribution();
-    const auto out_arc_distribution = graph.get_number_local_out_arc_distribution();
+    const auto in_arc_info_distribution = graph.get_local_in_arc_info_distribution();
+    const auto out_arc_info_distribution = graph.get_local_out_arc_info_distribution();
 
-    ASSERT_EQ(in_arc_distribution.size(), node_id_type{ 10 });
-    ASSERT_EQ(out_arc_distribution.size(), node_id_type{ 10 });
+    ASSERT_EQ(in_arc_info_distribution.size(), node_id_type{ 10 });
+    ASSERT_EQ(out_arc_info_distribution.size(), node_id_type{ 10 });
 
     for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 10 }; ++node_id) {
-        ASSERT_EQ(in_arc_distribution[node_id], graph.get_number_in_arcs(0, node_id));
-        ASSERT_EQ(out_arc_distribution[node_id], graph.get_number_out_arcs(0, node_id));
+        ASSERT_EQ(in_arc_info_distribution[node_id], graph.get_in_arc_info(0, node_id));
+        ASSERT_EQ(out_arc_info_distribution[node_id], graph.get_out_arc_info(0, node_id));
     }
 
     for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 10 }; ++node_id) {
@@ -768,11 +753,7 @@ TEST_F(DistributedGraphTest, testLoadNodesAndArcsFile) {
 }
 
 TEST_F(DistributedGraphTest, testLoadNodesAndArcsFileWeightsOne) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -958,15 +939,15 @@ TEST_F(DistributedGraphTest, testLoadNodesAndArcsFileWeightsOne) {
         }
     };
 
-    const auto in_arc_distribution = graph.get_number_local_in_arc_distribution();
-    const auto out_arc_distribution = graph.get_number_local_out_arc_distribution();
+    const auto in_arc_info_distribution = graph.get_local_in_arc_info_distribution();
+    const auto out_arc_info_distribution = graph.get_local_out_arc_info_distribution();
 
-    ASSERT_EQ(in_arc_distribution.size(), node_id_type{ 10 });
-    ASSERT_EQ(out_arc_distribution.size(), node_id_type{ 10 });
+    ASSERT_EQ(in_arc_info_distribution.size(), node_id_type{ 10 });
+    ASSERT_EQ(out_arc_info_distribution.size(), node_id_type{ 10 });
 
     for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 10 }; ++node_id) {
-        ASSERT_EQ(in_arc_distribution[node_id], graph.get_number_in_arcs(0, node_id));
-        ASSERT_EQ(out_arc_distribution[node_id], graph.get_number_out_arcs(0, node_id));
+        ASSERT_EQ(in_arc_info_distribution[node_id], graph.get_in_arc_info(0, node_id));
+        ASSERT_EQ(out_arc_info_distribution[node_id], graph.get_out_arc_info(0, node_id));
     }
 
     for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 10 }; ++node_id) {
@@ -1047,11 +1028,7 @@ TEST_F(DistributedGraphTest, testLoadNodesAndArcsFileWeightsOne) {
 }
 
 TEST_F(DistributedGraphTest, testLoadNodesFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -1509,5 +1486,522 @@ TEST_F(DistributedGraphTest, testLoadNodesFourRanks) {
         for (auto node_id = node_id_type{ 0 }; node_id < 10; ++node_id) {
             ASSERT_EQ(graph.get_node_signal_localID(rank, node_id), rank_signal_types_indices[node_id]);
         }
+    }
+}
+
+TEST_F(DistributedGraphTest, testLoadNodesAndArcsFileUndirected) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    std::filesystem::create_directories("./input/positions");
+    std::filesystem::create_directories("./input/network");
+
+    auto nodes_file = std::ofstream{ "./input/positions/rank_0_positions.txt" };
+    auto in_arcs_file = std::ofstream{ "./input/network/rank_0_in_network.txt" };
+    auto out_arcs_file = std::ofstream{ "./input/network/rank_0_out_network.txt" };
+
+    // Three nodes forming a directed cycle 0 -> 1 -> 2 -> 0.
+    nodes_file << "1 0.1 0.2 0.3 area_1 excitatory\n";
+    nodes_file << "2 0.4 0.5 0.6 area_1 excitatory\n";
+    nodes_file << "3 0.7 0.8 0.9 area_1 excitatory\n";
+
+    // in arcs: target_rank target_id source_rank source_id weight (ids are 1-based)
+    in_arcs_file << "0 1 0 3 1\n"; // 0 <- 2
+    in_arcs_file << "0 2 0 1 1\n"; // 1 <- 0
+    in_arcs_file << "0 3 0 2 1\n"; // 2 <- 1
+
+    // out arcs: target_rank target_id source_rank source_id weight (ids are 1-based)
+    out_arcs_file << "0 2 0 1 1\n"; // 0 -> 1
+    out_arcs_file << "0 3 0 2 1\n"; // 1 -> 2
+    out_arcs_file << "0 1 0 3 1\n"; // 2 -> 0
+
+    nodes_file.flush();
+    nodes_file.close();
+
+    in_arcs_file.flush();
+    in_arcs_file.close();
+
+    out_arcs_file.flush();
+    out_arcs_file.close();
+
+    // undirected = true: the in and out neighbours of each node are disjoint here, so synchronize_arcs produces
+    // more arcs (6) than either input set (3). Before the window-sizing fix this overflowed the RMA windows.
+    auto graph = DistributedGraph::construct_graph("./input/", false, true, false, "");
+
+    ASSERT_EQ(graph.get_number_local_nodes(), 3);
+    ASSERT_EQ(graph.get_number_local_in_arcs(), 6);
+    ASSERT_EQ(graph.get_number_local_out_arcs(), 6);
+
+    const auto my_rank = mpi_rank_type{ 0 };
+
+    // undirected neighbours of each node: union of its out- and in-neighbours
+    const auto expected_neighbours = std::array<std::set<node_id_type>, 3>{
+        std::set<node_id_type>{ 1, 2 }, // node 0: out 1, in 2
+        std::set<node_id_type>{ 0, 2 }, // node 1: out 2, in 0
+        std::set<node_id_type>{ 0, 1 }, // node 2: out 0, in 1
+    };
+
+    for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 3 }; ++node_id) {
+        const auto in_span = graph.get_in_arcs(my_rank, node_id);
+        const auto out_span = graph.get_out_arcs(my_rank, node_id);
+
+        ASSERT_EQ(in_span.size(), expected_neighbours[node_id].size()) << ' ' << node_id;
+        ASSERT_EQ(out_span.size(), expected_neighbours[node_id].size()) << ' ' << node_id;
+
+        auto in_neighbours = std::set<node_id_type>{};
+        auto in_weight = weight_type{ 0 };
+        for (const auto& arc : in_span) {
+            ASSERT_EQ(arc.source_rank, my_rank) << ' ' << node_id;
+            in_neighbours.insert(arc.source_id);
+            in_weight += arc.weight;
+        }
+
+        auto out_neighbours = std::set<node_id_type>{};
+        auto out_weight = weight_type{ 0 };
+        for (const auto& arc : out_span) {
+            ASSERT_EQ(arc.target_rank, my_rank) << ' ' << node_id;
+            out_neighbours.insert(arc.target_id);
+            out_weight += arc.weight;
+        }
+
+        ASSERT_EQ(in_neighbours, expected_neighbours[node_id]) << ' ' << node_id;
+        // undirected: incoming and outgoing arcs are identical
+        ASSERT_EQ(out_neighbours, expected_neighbours[node_id]) << ' ' << node_id;
+
+        ASSERT_EQ(graph.get_weight_in_arcs(my_rank, node_id), in_weight) << ' ' << node_id;
+        ASSERT_EQ(graph.get_weight_out_arcs(my_rank, node_id), out_weight) << ' ' << node_id;
+    }
+
+    // With two arcs per node the prefixes must be the running arc count.
+    ASSERT_EQ(graph.get_prefix_in_arcs(my_rank, node_id_type{ 0 }), 0);
+    ASSERT_EQ(graph.get_prefix_in_arcs(my_rank, node_id_type{ 1 }), 2);
+    ASSERT_EQ(graph.get_prefix_in_arcs(my_rank, node_id_type{ 2 }), 4);
+
+    ASSERT_EQ(graph.get_prefix_out_arcs(my_rank, node_id_type{ 0 }), 0);
+    ASSERT_EQ(graph.get_prefix_out_arcs(my_rank, node_id_type{ 1 }), 2);
+    ASSERT_EQ(graph.get_prefix_out_arcs(my_rank, node_id_type{ 2 }), 4);
+}
+
+TEST_F(DistributedGraphTest, testLoadArcsRejectsOutOfRangeEndpoints) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    std::filesystem::create_directories("./input/positions");
+    std::filesystem::create_directories("./input/network");
+
+    auto nodes_file = std::ofstream{ "./input/positions/rank_0_positions.txt" };
+    auto in_arcs_file = std::ofstream{ "./input/network/rank_0_in_network.txt" };
+    auto out_arcs_file = std::ofstream{ "./input/network/rank_0_out_network.txt" };
+
+    nodes_file << "1 0.1 0.2 0.3 area_1 excitatory\n";
+    nodes_file << "2 0.4 0.5 0.6 area_1 excitatory\n";
+    nodes_file << "3 0.7 0.8 0.9 area_1 excitatory\n";
+
+    // One valid in arc and endpoints that must be rejected against the node distribution [3].
+    in_arcs_file << "0 1 0 2 1\n";  // valid: node 0 <- node 1
+    in_arcs_file << "0 1 0 99 1\n"; // invalid: source id out of range
+    in_arcs_file << "0 1 5 1 1\n";  // invalid: source rank out of range
+
+    // One valid out arc and endpoints that must be rejected.
+    out_arcs_file << "0 2 0 1 1\n";  // valid: node 0 -> node 1
+    out_arcs_file << "0 99 0 1 1\n"; // invalid: target id out of range
+    out_arcs_file << "5 1 0 1 1\n";  // invalid: target rank out of range
+
+    nodes_file.flush();
+    nodes_file.close();
+
+    in_arcs_file.flush();
+    in_arcs_file.close();
+
+    out_arcs_file.flush();
+    out_arcs_file.close();
+
+    auto graph = DistributedGraph::construct_graph("./input/", false, false, false, "");
+
+    ASSERT_EQ(graph.get_number_local_nodes(), 3);
+    ASSERT_EQ(graph.get_number_local_in_arcs(), 1);
+    ASSERT_EQ(graph.get_number_local_out_arcs(), 1);
+
+    const auto my_rank = mpi_rank_type{ 0 };
+
+    const auto in_span = graph.get_in_arcs(my_rank, node_id_type{ 0 });
+    ASSERT_EQ(in_span.size(), 1);
+    ASSERT_EQ(in_span[0].source_rank, my_rank);
+    ASSERT_EQ(in_span[0].source_id, node_id_type{ 1 });
+
+    const auto out_span = graph.get_out_arcs(my_rank, node_id_type{ 0 });
+    ASSERT_EQ(out_span.size(), 1);
+    ASSERT_EQ(out_span[0].target_rank, my_rank);
+    ASSERT_EQ(out_span[0].target_id, node_id_type{ 1 });
+}
+
+TEST_F(DistributedGraphTest, testUploadArcsSkipsZeroWeightArcs) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    auto positions = std::vector<Vec3d>{};
+    positions.emplace_back(0.1, 0.2, 0.3);
+    positions.emplace_back(0.4, 0.5, 0.6);
+    positions.emplace_back(0.7, 0.8, 0.9);
+
+    auto area_names = std::vector<std::string>{ "area_1" };
+    auto signal_types = std::vector<std::string>{ "excitatory" };
+    auto area_names_indices = std::vector<node_id_type>{ 0, 0, 0 };
+    auto signal_types_indices = std::vector<node_id_type>{ 0, 0, 0 };
+
+    auto loaded_nodes = LoadedNodes{ positions, area_names, signal_types, area_names_indices, signal_types_indices };
+
+    using arc_collection = LoadedArcs::value_type;
+    constexpr auto ce = [](const mpi_rank_type rank, const node_id_type node, const weight_type weight) {
+        return std::make_pair(std::make_pair(rank, node), weight);
+    };
+
+    // node 0 has one real in arc and one zero-weight in arc; the zero-weight arc must be skipped on upload
+    auto in_arcs = LoadedArcs{};
+    in_arcs.emplace_back(arc_collection{ ce(0, 1, 5), ce(0, 2, 0) });
+    in_arcs.emplace_back(arc_collection{});
+    in_arcs.emplace_back(arc_collection{});
+
+    // node 0 has one zero-weight out arc (skipped) and one real out arc
+    auto out_arcs = LoadedArcs{};
+    out_arcs.emplace_back(arc_collection{ ce(0, 1, 0), ce(0, 2, 7) });
+    out_arcs.emplace_back(arc_collection{});
+    out_arcs.emplace_back(arc_collection{});
+
+    auto graph = DistributedGraph::construct_graph(std::move(loaded_nodes), in_arcs, out_arcs);
+
+    const auto my_rank = mpi_rank_type{ 0 };
+
+    // the zero-weight arcs are not stored, so the counts are one below the number of map entries
+    ASSERT_EQ(graph.get_number_local_in_arcs(), 1);
+    ASSERT_EQ(graph.get_number_local_out_arcs(), 1);
+
+    ASSERT_EQ(graph.get_number_in_arcs(my_rank, node_id_type{ 0 }), 1);
+    const auto in_span = graph.get_in_arcs(my_rank, node_id_type{ 0 });
+    ASSERT_EQ(in_span.size(), 1);
+    ASSERT_EQ(in_span[0].source_id, node_id_type{ 1 });
+    ASSERT_EQ(in_span[0].weight, weight_type{ 5 });
+    ASSERT_EQ(graph.get_weight_in_arcs(my_rank, node_id_type{ 0 }), weight_type{ 5 });
+
+    ASSERT_EQ(graph.get_number_out_arcs(my_rank, node_id_type{ 0 }), 1);
+    const auto out_span = graph.get_out_arcs(my_rank, node_id_type{ 0 });
+    ASSERT_EQ(out_span.size(), 1);
+    ASSERT_EQ(out_span[0].target_id, node_id_type{ 2 });
+    ASSERT_EQ(out_span[0].weight, weight_type{ 7 });
+    ASSERT_EQ(graph.get_weight_out_arcs(my_rank, node_id_type{ 0 }), weight_type{ 7 });
+}
+
+TEST_F(DistributedGraphTest, testLockAndUnlockAllRmaWindows) {
+    // This test is collective: it runs on every rank so that the barriers inside lock/unlock match.
+    const auto my_rank = mpiPP::MPIInfo::get_my_rank().get_rank();
+
+    auto positions = std::vector<Vec3d>{};
+    positions.emplace_back(0.1, 0.2, 0.3);
+    positions.emplace_back(0.4, 0.5, 0.6);
+
+    auto area_names = std::vector<std::string>{ "area_1" };
+    auto signal_types = std::vector<std::string>{ "excitatory" };
+    auto area_names_indices = std::vector<node_id_type>{ 0, 0 };
+    auto signal_types_indices = std::vector<node_id_type>{ 0, 0 };
+
+    auto loaded_nodes = LoadedNodes{ positions, area_names, signal_types, area_names_indices, signal_types_indices };
+
+    using arc_collection = LoadedArcs::value_type;
+    const auto ce = [](const mpi_rank_type rank, const node_id_type node, const weight_type weight) {
+        return std::make_pair(std::make_pair(rank, node), weight);
+    };
+
+    auto in_arcs = LoadedArcs{};
+    in_arcs.emplace_back(arc_collection{ ce(my_rank, 1, 1) });
+    in_arcs.emplace_back(arc_collection{});
+
+    auto out_arcs = LoadedArcs{};
+    out_arcs.emplace_back(arc_collection{ ce(my_rank, 1, 1) });
+    out_arcs.emplace_back(arc_collection{});
+
+    auto graph = DistributedGraph::construct_graph(std::move(loaded_nodes), in_arcs, out_arcs);
+
+    // Locking and unlocking all windows must succeed and leave the graph usable afterwards.
+    graph.lock_all_rma_windows();
+    ASSERT_EQ(graph.get_number_local_nodes(), 2);
+    graph.unlock_all_rma_windows();
+
+    ASSERT_EQ(graph.get_number_local_nodes(), 2);
+    ASSERT_EQ(graph.get_number_in_arcs(my_rank, node_id_type{ 0 }), 1);
+    ASSERT_EQ(graph.get_number_out_arcs(my_rank, node_id_type{ 0 }), 1);
+}
+
+TEST_F(DistributedGraphTest, testLoadNodesAndArcsFileRemoveSelfArcs) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    std::filesystem::create_directories("./input/positions");
+    std::filesystem::create_directories("./input/network");
+
+    {
+        auto nodes_file = std::ofstream{ "./input/positions/rank_0_positions.txt" };
+        nodes_file << "1 0.1 0.2 0.3 area_1 excitatory\n";
+        nodes_file << "2 0.4 0.5 0.6 area_1 excitatory\n";
+        nodes_file << "3 0.7 0.8 0.9 area_1 excitatory\n";
+    }
+    {
+        auto in_arcs_file = std::ofstream{ "./input/network/rank_0_in_network.txt" };
+        in_arcs_file << "0 1 0 1 5\n"; // node 0 <- node 0 : self arc (must be removed)
+        in_arcs_file << "0 1 0 2 3\n"; // node 0 <- node 1 : kept
+    }
+    {
+        auto out_arcs_file = std::ofstream{ "./input/network/rank_0_out_network.txt" };
+        out_arcs_file << "0 1 0 1 5\n"; // node 0 -> node 0 : self arc (must be removed)
+        out_arcs_file << "0 2 0 1 7\n"; // node 0 -> node 1 : kept
+    }
+
+    // remove_self_arcs = true, undirected = false, one_weight = false
+    auto graph = DistributedGraph::construct_graph("./input/", true, false, false, "");
+
+    ASSERT_EQ(graph.get_number_local_nodes(), 3);
+    ASSERT_EQ(graph.get_number_local_in_arcs(), 1);
+    ASSERT_EQ(graph.get_number_local_out_arcs(), 1);
+
+    const auto my_rank = mpi_rank_type{ 0 };
+
+    const auto in_span = graph.get_in_arcs(my_rank, node_id_type{ 0 });
+    ASSERT_EQ(in_span.size(), 1);
+    ASSERT_EQ(in_span[0].source_rank, my_rank);
+    ASSERT_EQ(in_span[0].source_id, node_id_type{ 1 });
+    ASSERT_EQ(in_span[0].weight, weight_type{ 3 });
+
+    const auto out_span = graph.get_out_arcs(my_rank, node_id_type{ 0 });
+    ASSERT_EQ(out_span.size(), 1);
+    ASSERT_EQ(out_span[0].target_rank, my_rank);
+    ASSERT_EQ(out_span[0].target_id, node_id_type{ 1 });
+    ASSERT_EQ(out_span[0].weight, weight_type{ 7 });
+}
+
+TEST_F(DistributedGraphTest, testLoadNodesAndArcsFileUndirectedWeightsOne) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    std::filesystem::create_directories("./input/positions");
+    std::filesystem::create_directories("./input/network");
+
+    {
+        auto nodes_file = std::ofstream{ "./input/positions/rank_0_positions.txt" };
+        nodes_file << "1 0.1 0.2 0.3 area_1 excitatory\n";
+        nodes_file << "2 0.4 0.5 0.6 area_1 excitatory\n";
+        nodes_file << "3 0.7 0.8 0.9 area_1 excitatory\n";
+    }
+    {
+        // in arcs of a directed cycle 0 -> 1 -> 2 -> 0 with varying weights
+        auto in_arcs_file = std::ofstream{ "./input/network/rank_0_in_network.txt" };
+        in_arcs_file << "0 1 0 3 2\n"; // 0 <- 2
+        in_arcs_file << "0 2 0 1 3\n"; // 1 <- 0
+        in_arcs_file << "0 3 0 2 4\n"; // 2 <- 1
+    }
+    {
+        auto out_arcs_file = std::ofstream{ "./input/network/rank_0_out_network.txt" };
+        out_arcs_file << "0 2 0 1 5\n"; // 0 -> 1
+        out_arcs_file << "0 3 0 2 6\n"; // 1 -> 2
+        out_arcs_file << "0 1 0 3 7\n"; // 2 -> 0
+    }
+
+    // undirected = true and one_weight = true: arcs are symmetrized and every weight is set to one.
+    auto graph = DistributedGraph::construct_graph("./input/", false, true, true, "");
+
+    ASSERT_EQ(graph.get_number_local_nodes(), 3);
+    ASSERT_EQ(graph.get_number_local_in_arcs(), 6);
+    ASSERT_EQ(graph.get_number_local_out_arcs(), 6);
+
+    const auto my_rank = mpi_rank_type{ 0 };
+
+    // undirected neighbours of each node: union of its out- and in-neighbours
+    const auto expected_neighbours = std::array<std::set<node_id_type>, 3>{
+        std::set<node_id_type>{ 1, 2 }, // node 0: out 1, in 2
+        std::set<node_id_type>{ 0, 2 }, // node 1: out 2, in 0
+        std::set<node_id_type>{ 0, 1 }, // node 2: out 0, in 1
+    };
+
+    for (auto node_id = node_id_type{ 0 }; node_id < node_id_type{ 3 }; ++node_id) {
+        const auto in_span = graph.get_in_arcs(my_rank, node_id);
+        const auto out_span = graph.get_out_arcs(my_rank, node_id);
+
+        ASSERT_EQ(in_span.size(), 2) << ' ' << node_id;
+        ASSERT_EQ(out_span.size(), 2) << ' ' << node_id;
+
+        auto in_neighbours = std::set<node_id_type>{};
+        for (const auto& arc : in_span) {
+            ASSERT_EQ(arc.weight, weight_type{ 1 }) << ' ' << node_id;
+            in_neighbours.insert(arc.source_id);
+        }
+
+        auto out_neighbours = std::set<node_id_type>{};
+        for (const auto& arc : out_span) {
+            ASSERT_EQ(arc.weight, weight_type{ 1 }) << ' ' << node_id;
+            out_neighbours.insert(arc.target_id);
+        }
+
+        ASSERT_EQ(in_neighbours, expected_neighbours[node_id]) << ' ' << node_id;
+        ASSERT_EQ(out_neighbours, expected_neighbours[node_id]) << ' ' << node_id;
+
+        // two arcs of weight one each
+        ASSERT_EQ(graph.get_weight_in_arcs(my_rank, node_id), weight_type{ 2 }) << ' ' << node_id;
+        ASSERT_EQ(graph.get_weight_out_arcs(my_rank, node_id), weight_type{ 2 }) << ' ' << node_id;
+    }
+}
+
+TEST_F(DistributedGraphTest, testArcInfoLayout) {
+    // The whole point of the struct is that a node's arc count and arc prefix fit into eight bytes,
+    // i.e., that both can be fetched with a single remote memory access.
+    ASSERT_EQ(sizeof(ArcInfo), 8U);
+    ASSERT_EQ(alignof(ArcInfo), alignof(arc_id_type));
+
+    constexpr auto default_arc_info = ArcInfo{};
+    ASSERT_EQ(default_arc_info.number_arcs, arc_id_type{ 0 });
+    ASSERT_EQ(default_arc_info.prefix_arcs, arc_id_type{ 0 });
+
+    constexpr auto arc_info = ArcInfo{ 3, 7 };
+    ASSERT_EQ(arc_info.number_arcs, arc_id_type{ 3 });
+    ASSERT_EQ(arc_info.prefix_arcs, arc_id_type{ 7 });
+
+    ASSERT_EQ(arc_info, (ArcInfo{ 3, 7 }));
+    ASSERT_NE(arc_info, (ArcInfo{ 7, 3 }));
+    ASSERT_NE(arc_info, default_arc_info);
+
+    auto stream = std::ostringstream{};
+    stream << arc_info;
+    ASSERT_EQ(stream.str(), "(3, 7)");
+}
+
+TEST_F(DistributedGraphTest, testArcInfo) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_one_rank_graph();
+
+    constexpr auto number_nodes = node_id_type{ 10 };
+
+    // The arcs are stored in ascending node order, so the prefix of a node is the number of arcs of all previous nodes.
+    constexpr auto expected_in_arc_infos = std::array<ArcInfo, number_nodes>{ ArcInfo{ 1, 0 },  ArcInfo{ 3, 1 },  ArcInfo{ 2, 4 },  ArcInfo{ 3, 6 },
+                                                                              ArcInfo{ 2, 9 },  ArcInfo{ 2, 11 }, ArcInfo{ 5, 13 }, ArcInfo{ 2, 18 },
+                                                                              ArcInfo{ 2, 20 }, ArcInfo{ 3, 22 } };
+
+    constexpr auto expected_out_arc_infos = std::array<ArcInfo, number_nodes>{ ArcInfo{ 3, 0 },  ArcInfo{ 2, 3 },  ArcInfo{ 2, 5 },  ArcInfo{ 3, 7 },
+                                                                               ArcInfo{ 4, 10 }, ArcInfo{ 3, 14 }, ArcInfo{ 2, 17 }, ArcInfo{ 2, 19 },
+                                                                               ArcInfo{ 2, 21 }, ArcInfo{ 2, 23 } };
+
+    const auto my_rank = mpi_rank_type{ 0 };
+
+    const auto in_arc_info_distribution = graph.get_local_in_arc_info_distribution();
+    const auto out_arc_info_distribution = graph.get_local_out_arc_info_distribution();
+
+    ASSERT_EQ(in_arc_info_distribution.size(), number_nodes);
+    ASSERT_EQ(out_arc_info_distribution.size(), number_nodes);
+
+    for (auto node_id = node_id_type{ 0 }; node_id < number_nodes; ++node_id) {
+        const auto in_arc_info = graph.get_in_arc_info(my_rank, node_id);
+
+        ASSERT_EQ(in_arc_info, expected_in_arc_infos[node_id]) << ' ' << node_id;
+        ASSERT_EQ(in_arc_info, in_arc_info_distribution[node_id]) << ' ' << node_id;
+
+        // The single accessors must return the respective member of the packed info.
+        ASSERT_EQ(in_arc_info.number_arcs, graph.get_number_in_arcs(my_rank, node_id)) << ' ' << node_id;
+        ASSERT_EQ(in_arc_info.prefix_arcs, graph.get_prefix_in_arcs(my_rank, node_id)) << ' ' << node_id;
+
+        // The arcs of the node must be stored in [prefix_arcs, prefix_arcs + number_arcs) of the arc window.
+        const auto in_span = graph.get_in_arcs(my_rank, node_id);
+        ASSERT_EQ(in_span.size(), in_arc_info.number_arcs) << ' ' << node_id;
+
+        for (auto arc_id = arc_id_type{ 0 }; arc_id < in_arc_info.number_arcs; ++arc_id) {
+            ASSERT_EQ(in_span[arc_id], graph.get_in_arc(my_rank, node_id, arc_id)) << ' ' << node_id;
+        }
+
+        const auto out_arc_info = graph.get_out_arc_info(my_rank, node_id);
+
+        ASSERT_EQ(out_arc_info, expected_out_arc_infos[node_id]) << ' ' << node_id;
+        ASSERT_EQ(out_arc_info, out_arc_info_distribution[node_id]) << ' ' << node_id;
+
+        ASSERT_EQ(out_arc_info.number_arcs, graph.get_number_out_arcs(my_rank, node_id)) << ' ' << node_id;
+        ASSERT_EQ(out_arc_info.prefix_arcs, graph.get_prefix_out_arcs(my_rank, node_id)) << ' ' << node_id;
+
+        const auto out_span = graph.get_out_arcs(my_rank, node_id);
+        ASSERT_EQ(out_span.size(), out_arc_info.number_arcs) << ' ' << node_id;
+
+        for (auto arc_id = arc_id_type{ 0 }; arc_id < out_arc_info.number_arcs; ++arc_id) {
+            ASSERT_EQ(out_span[arc_id], graph.get_out_arc(my_rank, node_id, arc_id)) << ' ' << node_id;
+        }
+    }
+
+    // The infos of the last node must cover the arc windows completely.
+    const auto& last_in_arc_info = in_arc_info_distribution[number_nodes - 1];
+    ASSERT_EQ(last_in_arc_info.prefix_arcs + last_in_arc_info.number_arcs, graph.get_number_local_in_arcs());
+
+    const auto& last_out_arc_info = out_arc_info_distribution[number_nodes - 1];
+    ASSERT_EQ(last_out_arc_info.prefix_arcs + last_out_arc_info.number_arcs, graph.get_number_local_out_arcs());
+}
+
+TEST_F(DistributedGraphTest, testArcInfoFourRanks) {
+    if (skip_unless_rank_count(4)) {
+        return;
+    }
+
+    const auto graph = get_standard_four_rank_graph();
+
+    constexpr auto number_nodes = node_id_type{ 10 };
+
+    // Every rank stores the same arc structure, so the same infos are expected for all four ranks.
+    constexpr auto expected_in_arc_infos = std::array<ArcInfo, number_nodes>{ ArcInfo{ 2, 0 },  ArcInfo{ 4, 2 },  ArcInfo{ 3, 6 },  ArcInfo{ 4, 9 },
+                                                                              ArcInfo{ 3, 13 }, ArcInfo{ 3, 16 }, ArcInfo{ 6, 19 }, ArcInfo{ 3, 25 },
+                                                                              ArcInfo{ 3, 28 }, ArcInfo{ 4, 31 } };
+
+    constexpr auto expected_out_arc_infos = std::array<ArcInfo, number_nodes>{ ArcInfo{ 4, 0 },  ArcInfo{ 3, 4 },  ArcInfo{ 3, 7 },  ArcInfo{ 4, 10 },
+                                                                               ArcInfo{ 5, 14 }, ArcInfo{ 4, 19 }, ArcInfo{ 3, 23 }, ArcInfo{ 3, 26 },
+                                                                               ArcInfo{ 3, 29 }, ArcInfo{ 3, 32 } };
+
+    // Reading the info of a node of another rank must yield the same values as reading it locally.
+    for (auto rank = mpi_rank_type{ 0 }; rank < 4; ++rank) {
+        for (auto node_id = node_id_type{ 0 }; node_id < number_nodes; ++node_id) {
+            const auto in_arc_info = graph.get_in_arc_info(rank, node_id);
+
+            ASSERT_EQ(in_arc_info, expected_in_arc_infos[node_id]) << rank << ' ' << node_id;
+            ASSERT_EQ(in_arc_info.number_arcs, graph.get_number_in_arcs(rank, node_id)) << rank << ' ' << node_id;
+            ASSERT_EQ(in_arc_info.prefix_arcs, graph.get_prefix_in_arcs(rank, node_id)) << rank << ' ' << node_id;
+
+            const auto in_span = graph.get_in_arcs(rank, node_id);
+            ASSERT_EQ(in_span.size(), in_arc_info.number_arcs) << rank << ' ' << node_id;
+
+            for (auto arc_id = arc_id_type{ 0 }; arc_id < in_arc_info.number_arcs; ++arc_id) {
+                ASSERT_EQ(in_span[arc_id], graph.get_in_arc(rank, node_id, arc_id)) << rank << ' ' << node_id;
+            }
+
+            const auto out_arc_info = graph.get_out_arc_info(rank, node_id);
+
+            ASSERT_EQ(out_arc_info, expected_out_arc_infos[node_id]) << rank << ' ' << node_id;
+            ASSERT_EQ(out_arc_info.number_arcs, graph.get_number_out_arcs(rank, node_id)) << rank << ' ' << node_id;
+            ASSERT_EQ(out_arc_info.prefix_arcs, graph.get_prefix_out_arcs(rank, node_id)) << rank << ' ' << node_id;
+
+            const auto out_span = graph.get_out_arcs(rank, node_id);
+            ASSERT_EQ(out_span.size(), out_arc_info.number_arcs) << rank << ' ' << node_id;
+
+            for (auto arc_id = arc_id_type{ 0 }; arc_id < out_arc_info.number_arcs; ++arc_id) {
+                ASSERT_EQ(out_span[arc_id], graph.get_out_arc(rank, node_id, arc_id)) << rank << ' ' << node_id;
+            }
+        }
+    }
+
+    // The local windows must contain what the other ranks read from them.
+    const auto in_arc_info_distribution = graph.get_local_in_arc_info_distribution();
+    const auto out_arc_info_distribution = graph.get_local_out_arc_info_distribution();
+
+    ASSERT_EQ(in_arc_info_distribution.size(), number_nodes);
+    ASSERT_EQ(out_arc_info_distribution.size(), number_nodes);
+
+    for (auto node_id = node_id_type{ 0 }; node_id < number_nodes; ++node_id) {
+        ASSERT_EQ(in_arc_info_distribution[node_id], expected_in_arc_infos[node_id]) << ' ' << node_id;
+        ASSERT_EQ(out_arc_info_distribution[node_id], expected_out_arc_infos[node_id]) << ' ' << node_id;
     }
 }

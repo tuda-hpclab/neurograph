@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -10,20 +10,14 @@
 
 #include "test_area_connectivity.h"
 
-#include "metrics/AreaConnectivity.h"
+#include "metrics/community/AreaConnectivity.h"
 
-#include "mpi-wrapper/MPIInfo.h"
-
-#include <spdlog/spdlog.h>
+#include <mpi-wrapper/core/MPIInfo.h>
 
 #include <iostream>
 
 TEST_F(AreaConnectivityTest, testStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -49,12 +43,20 @@ TEST_F(AreaConnectivityTest, testStandard) {
     ASSERT_EQ(area_connectivity.at({ "area_3", "area_2" }), 3);
 }
 
-TEST_F(AreaConnectivityTest, testStandardUU) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
+TEST_F(AreaConnectivityTest, testEmpty) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
 
+    const auto graph = get_empty_one_rank_graph();
+
+    const auto area_connectivity = AreaConnectivity::compute_area_connectivity_strength(graph);
+
+    ASSERT_TRUE(area_connectivity.empty());
+}
+
+TEST_F(AreaConnectivityTest, testStandardUU) {
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -85,11 +87,7 @@ TEST_F(AreaConnectivityTest, testStandardUU) {
 }
 
 TEST_F(AreaConnectivityTest, testFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -122,11 +120,7 @@ TEST_F(AreaConnectivityTest, testFull) {
 }
 
 TEST_F(AreaConnectivityTest, testStandardFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -164,10 +158,10 @@ TEST_F(AreaConnectivityTest, testStandardFourRanksDummy) {
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_1" }), 61);
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_2" }), 17);
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_3" }), 4);
-    ASSERT_EQ(area_connectivity.at({ "area_1", "area_4" }), 89);
+    ASSERT_EQ(area_connectivity.at({ "area_1", "area_4" }), 92);
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_5" }), 18);
 
-    ASSERT_EQ(area_connectivity.at({ "area_2", "area_1" }), 63);
+    ASSERT_EQ(area_connectivity.at({ "area_2", "area_1" }), 66);
     ASSERT_EQ(area_connectivity.at({ "area_2", "area_2" }), 45);
     ASSERT_EQ(area_connectivity.at({ "area_2", "area_3" }), 11);
     ASSERT_EQ(area_connectivity.at({ "area_2", "area_4" }), 44);
@@ -175,9 +169,9 @@ TEST_F(AreaConnectivityTest, testStandardFourRanksDummy) {
     ASSERT_EQ(area_connectivity.at({ "area_3", "area_1" }), 11);
     ASSERT_EQ(area_connectivity.at({ "area_3", "area_2" }), 3);
 
-    ASSERT_EQ(area_connectivity.at({ "area_4", "area_1" }), 55);
+    ASSERT_EQ(area_connectivity.at({ "area_4", "area_1" }), 58);
     ASSERT_EQ(area_connectivity.at({ "area_4", "area_2" }), 53);
-    ASSERT_EQ(area_connectivity.at({ "area_4", "area_4" }), 35);
+    ASSERT_EQ(area_connectivity.at({ "area_4", "area_4" }), 38);
     ASSERT_EQ(area_connectivity.at({ "area_4", "area_5" }), 34);
 
     ASSERT_EQ(area_connectivity.at({ "area_5", "area_1" }), 13);
@@ -187,11 +181,7 @@ TEST_F(AreaConnectivityTest, testStandardFourRanksDummy) {
 }
 
 TEST_F(AreaConnectivityTest, testStandardUUFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -254,11 +244,7 @@ TEST_F(AreaConnectivityTest, testStandardUUFourRanksDummy) {
 }
 
 TEST_F(AreaConnectivityTest, testFullFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -329,11 +315,7 @@ TEST_F(AreaConnectivityTest, testFullFourRanksDummy) {
 }
 
 TEST_F(AreaConnectivityTest, testStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -344,8 +326,6 @@ TEST_F(AreaConnectivityTest, testStandardFourRanks) {
     if (!mpiPP::MPIInfo::is_root_rank()) {
         return;
     }
-
-    return;
 
     // The values are the corresponding ones from the one-rank version
     ASSERT_EQ(area_connectivity.size(), 19);
@@ -374,38 +354,13 @@ TEST_F(AreaConnectivityTest, testStandardFourRanks) {
     ASSERT_TRUE(area_connectivity.contains({ "area_5", "area_4" }));
     ASSERT_TRUE(area_connectivity.contains({ "area_5", "area_5" }));
 
-    /*
-
-    area_1 --> area_1: 26
-    area_1 --> area_2: 10
-    area_1 --> area_3: 5
-    area_1 --> area_4: 21
-    area_1 --> area_5: 13
-
-    area_2 --> area_1: 24
-    area_2 --> area_2: 16
-    area_2 --> area_4: 26
-
-    area_3 --> area_2: 3
-
-    area_4 --> area_1: 12
-    area_4 --> area_2: 14
-    area_4 --> area_4: 28
-    area_4 --> area_5: 1
-
-    area_5 --> area_1: 13
-    area_5 --> area_4: 3
-    area_5 --> area_5: 5
-
-*/
-
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_1" }), 61);
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_2" }), 17);
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_3" }), 4);
-    ASSERT_EQ(area_connectivity.at({ "area_1", "area_4" }), 89);
+    ASSERT_EQ(area_connectivity.at({ "area_1", "area_4" }), 92);
     ASSERT_EQ(area_connectivity.at({ "area_1", "area_5" }), 18);
 
-    ASSERT_EQ(area_connectivity.at({ "area_2", "area_1" }), 63);
+    ASSERT_EQ(area_connectivity.at({ "area_2", "area_1" }), 66);
     ASSERT_EQ(area_connectivity.at({ "area_2", "area_2" }), 45);
     ASSERT_EQ(area_connectivity.at({ "area_2", "area_3" }), 11);
     ASSERT_EQ(area_connectivity.at({ "area_2", "area_4" }), 44);
@@ -413,9 +368,9 @@ TEST_F(AreaConnectivityTest, testStandardFourRanks) {
     ASSERT_EQ(area_connectivity.at({ "area_3", "area_1" }), 11);
     ASSERT_EQ(area_connectivity.at({ "area_3", "area_2" }), 3);
 
-    ASSERT_EQ(area_connectivity.at({ "area_4", "area_1" }), 55);
+    ASSERT_EQ(area_connectivity.at({ "area_4", "area_1" }), 58);
     ASSERT_EQ(area_connectivity.at({ "area_4", "area_2" }), 53);
-    ASSERT_EQ(area_connectivity.at({ "area_4", "area_4" }), 35);
+    ASSERT_EQ(area_connectivity.at({ "area_4", "area_4" }), 38);
     ASSERT_EQ(area_connectivity.at({ "area_4", "area_5" }), 34);
 
     ASSERT_EQ(area_connectivity.at({ "area_5", "area_1" }), 13);
@@ -425,11 +380,7 @@ TEST_F(AreaConnectivityTest, testStandardFourRanks) {
 }
 
 TEST_F(AreaConnectivityTest, testStandardUUFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -440,7 +391,7 @@ TEST_F(AreaConnectivityTest, testStandardUUFourRanks) {
     if (!mpiPP::MPIInfo::is_root_rank()) {
         return;
     }
-    return;
+
     // The values are the corresponding ones from the one-rank version
     ASSERT_EQ(area_connectivity.size(), 20);
 
@@ -496,11 +447,7 @@ TEST_F(AreaConnectivityTest, testStandardUUFourRanks) {
 }
 
 TEST_F(AreaConnectivityTest, testFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -511,7 +458,7 @@ TEST_F(AreaConnectivityTest, testFullFourRanks) {
     if (!mpiPP::MPIInfo::is_root_rank()) {
         return;
     }
-    return;
+
     // The values are the corresponding ones from the one-rank version
     ASSERT_EQ(area_connectivity.size(), 24);
 
@@ -572,4 +519,139 @@ TEST_F(AreaConnectivityTest, testFullFourRanks) {
     ASSERT_EQ(area_connectivity.at({ "area_5", "area_3" }), 4);
     ASSERT_EQ(area_connectivity.at({ "area_5", "area_4" }), 40);
     ASSERT_EQ(area_connectivity.at({ "area_5", "area_5" }), 12);
+}
+
+namespace {
+/**
+ * @brief The area connectivity of the standard seven-rank graph. Comparing the whole map at once
+ *		also pins down which pairs are absent, which is what distinguishes this graph: area_3 only
+ *		exists in the two blocks of canonical rank 0 and never reaches area_4 or area_5.
+ */
+[[nodiscard]] AreaConnectivityMap get_expected_standard_seven_rank_connectivity() {
+    return AreaConnectivityMap{
+        { { "area_1", "area_1" }, 118 }, { { "area_1", "area_2" }, 45 }, { { "area_1", "area_3" }, 19 },
+        { { "area_1", "area_4" }, 126 }, { { "area_1", "area_5" }, 18 }, { { "area_2", "area_1" }, 110 },
+        { { "area_2", "area_2" }, 76 },  { { "area_2", "area_3" }, 11 }, { { "area_2", "area_4" }, 70 },
+        { { "area_3", "area_1" }, 22 },  { { "area_3", "area_2" }, 6 },  { { "area_4", "area_1" }, 86 },
+        { { "area_4", "area_2" }, 81 },  { { "area_4", "area_4" }, 53 }, { { "area_4", "area_5" }, 34 },
+        { { "area_5", "area_1" }, 13 },  { { "area_5", "area_2" }, 22 }, { { "area_5", "area_4" }, 25 },
+        { { "area_5", "area_5" }, 5 },
+    };
+}
+
+[[nodiscard]] AreaConnectivityMap get_expected_standard_uu_seven_rank_connectivity() {
+    // Symmetrizing the arcs makes the map symmetric as well
+    return AreaConnectivityMap{
+        { { "area_1", "area_1" }, 55 }, { { "area_1", "area_2" }, 29 }, { { "area_1", "area_3" }, 8 },
+        { { "area_1", "area_4" }, 38 }, { { "area_1", "area_5" }, 9 },  { { "area_2", "area_1" }, 29 },
+        { { "area_2", "area_2" }, 31 }, { { "area_2", "area_3" }, 5 },  { { "area_2", "area_4" }, 26 },
+        { { "area_2", "area_5" }, 2 },  { { "area_3", "area_1" }, 8 },  { { "area_3", "area_2" }, 5 },
+        { { "area_4", "area_1" }, 38 }, { { "area_4", "area_2" }, 26 }, { { "area_4", "area_4" }, 31 },
+        { { "area_4", "area_5" }, 8 },  { { "area_5", "area_1" }, 9 },  { { "area_5", "area_2" }, 2 },
+        { { "area_5", "area_4" }, 8 },  { { "area_5", "area_5" }, 5 },
+    };
+}
+
+[[nodiscard]] AreaConnectivityMap get_expected_full_seven_rank_connectivity() {
+    // The complete graph connects every node to every other one, so the strength of a pair of
+    // distinct areas is the product of their node counts and the map is symmetric. The area sizes
+    // are 18 for area_1, 18 for area_2, 2 for area_3, 21 for area_4 and 4 for area_5, so a pair of
+    // equal areas keeps n * (n - 1) arcs.
+    return AreaConnectivityMap{
+        { { "area_1", "area_1" }, 306 }, { { "area_1", "area_2" }, 324 }, { { "area_1", "area_3" }, 36 },
+        { { "area_1", "area_4" }, 378 }, { { "area_1", "area_5" }, 72 },  { { "area_2", "area_1" }, 324 },
+        { { "area_2", "area_2" }, 306 }, { { "area_2", "area_3" }, 36 },  { { "area_2", "area_4" }, 378 },
+        { { "area_2", "area_5" }, 72 },  { { "area_3", "area_1" }, 36 },  { { "area_3", "area_2" }, 36 },
+        { { "area_3", "area_3" }, 2 },   { { "area_3", "area_4" }, 42 },  { { "area_3", "area_5" }, 8 },
+        { { "area_4", "area_1" }, 378 }, { { "area_4", "area_2" }, 378 }, { { "area_4", "area_3" }, 42 },
+        { { "area_4", "area_4" }, 420 }, { { "area_4", "area_5" }, 84 },  { { "area_5", "area_1" }, 72 },
+        { { "area_5", "area_2" }, 72 },  { { "area_5", "area_3" }, 8 },   { { "area_5", "area_4" }, 84 },
+        { { "area_5", "area_5" }, 12 },
+    };
+}
+} // namespace
+
+TEST_F(AreaConnectivityTest, testStandardSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph_on_one_rank();
+
+    const auto area_connectivity = AreaConnectivity::compute_area_connectivity_strength(graph);
+
+    // The values serve as standard for the seven-rank test
+    ASSERT_EQ(area_connectivity, get_expected_standard_seven_rank_connectivity());
+}
+
+TEST_F(AreaConnectivityTest, testStandardUUSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph_on_one_rank();
+
+    const auto area_connectivity = AreaConnectivity::compute_area_connectivity_strength(graph);
+
+    // The values serve as standard for the seven-rank test
+    ASSERT_EQ(area_connectivity, get_expected_standard_uu_seven_rank_connectivity());
+}
+
+TEST_F(AreaConnectivityTest, testFullSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph_on_one_rank();
+
+    const auto area_connectivity = AreaConnectivity::compute_area_connectivity_strength(graph);
+
+    // The values serve as standard for the seven-rank test
+    ASSERT_EQ(area_connectivity, get_expected_full_seven_rank_connectivity());
+}
+
+TEST_F(AreaConnectivityTest, testStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto area_connectivity = AreaConnectivity::compute_area_connectivity_strength(graph);
+
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        // The values are the corresponding ones from the one-rank version; the area ids are local to
+        // their rank here and only the gathered name lists turn them back into these global names
+        ASSERT_EQ(area_connectivity, get_expected_standard_seven_rank_connectivity());
+    }
+}
+
+TEST_F(AreaConnectivityTest, testStandardUUSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph();
+
+    const auto area_connectivity = AreaConnectivity::compute_area_connectivity_strength(graph);
+
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        // The values are the corresponding ones from the one-rank version
+        ASSERT_EQ(area_connectivity, get_expected_standard_uu_seven_rank_connectivity());
+    }
+}
+
+TEST_F(AreaConnectivityTest, testFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto area_connectivity = AreaConnectivity::compute_area_connectivity_strength(graph);
+
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        // The values are the corresponding ones from the one-rank version
+        ASSERT_EQ(area_connectivity, get_expected_full_seven_rank_connectivity());
+    }
 }

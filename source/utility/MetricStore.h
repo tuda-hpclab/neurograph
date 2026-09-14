@@ -1,43 +1,48 @@
 #pragma once
 
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
  *
  */
 
-#include "Histogram.h"
 #include "Types.h"
+
+#include <mpi-wrapper/reductions/MPIAdvancedReductions.h>
 
 #include <array>
 #include <filesystem>
 #include <optional>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 class MetricStore {
 public:
+    template <typename DataType>
+    using Histogram = mpiPP::MPIAdvancedReductions::HistogramReduction<DataType>;
+
     void set_global_number_nodes(const global_node_id_type number) {
         number_nodes = number;
     }
 
-    void set_number_in_arcs(const arc_id_type number) {
+    void set_number_in_arcs(const distance_type number) {
         number_in_arcs = number;
     }
 
-    void set_number_out_arcs(const arc_id_type number) {
+    void set_number_out_arcs(const distance_type number) {
         number_out_arcs = number;
     }
 
-    void set_weight_in_arcs(const weight_type weight) {
+    void set_weight_in_arcs(const distance_type weight) {
         weight_in_arcs = weight;
     }
 
-    void set_weight_out_arcs(const weight_type weight) {
+    void set_weight_out_arcs(const distance_type weight) {
         weight_out_arcs = weight;
     }
 
@@ -89,11 +94,11 @@ public:
         arc_length_histogram_count = std::move(hist);
     }
 
-    void set_all_pairs_shortest_paths_result(apsp_global_result<distance_type> result) {
+    void set_all_pairs_shortest_paths_result(ApspGlobalResult<distance_type> result) {
         apsp_result = std::move(result);
     }
 
-    void set_all_pairs_shortest_paths_inverse_result(apsp_global_result<inverse_distance_type> result) {
+    void set_all_pairs_shortest_paths_inverse_result(ApspGlobalResult<inverse_distance_type> result) {
         apsp_inverse_result = std::move(result);
     }
 
@@ -113,6 +118,10 @@ public:
         area_connectivity_strength = std::move(map);
     }
 
+    void set_modularity(const double mod) {
+        modularity = mod;
+    }
+
     void set_motifs(const std::array<long double, 14>& motif_counts) {
         motifs = motif_counts;
     }
@@ -121,18 +130,38 @@ public:
         assortativity = coefficients;
     }
 
+    void set_reciprocity(const std::pair<double, double>& reciprocity_and_coefficient) {
+        reciprocity = reciprocity_and_coefficient;
+    }
+
+    void set_rich_club(RichClubResult result) {
+        rich_club = std::move(result);
+    }
+
+    void set_transitivity(const std::pair<double, double>& transitivities) {
+        transitivity = transitivities;
+    }
+
     void set_approximate_diameter(const distance_type diameter) {
         approximate_diameter = diameter;
+    }
+
+    void set_strongly_connected_components(SccResult result) {
+        strongly_connected_components = std::move(result);
+    }
+
+    void set_maximum_flow(const flow_type flow) {
+        maximum_flow = flow;
     }
 
     void output(const std::filesystem::path& output_path) const;
 
 private:
     std::optional<global_node_id_type> number_nodes{};
-    std::optional<arc_id_type> number_in_arcs{};
-    std::optional<arc_id_type> number_out_arcs{};
-    std::optional<weight_type> weight_in_arcs{};
-    std::optional<weight_type> weight_out_arcs{};
+    std::optional<distance_type> number_in_arcs{};
+    std::optional<distance_type> number_out_arcs{};
+    std::optional<distance_type> weight_in_arcs{};
+    std::optional<distance_type> weight_out_arcs{};
 
     std::optional<MinMax> extreme_in_degrees{};
     std::optional<Histogram<arc_id_type>> in_degree_histogram_width{};
@@ -150,8 +179,8 @@ private:
     std::optional<Histogram<double>> arc_length_histogram_width{};
     std::optional<Histogram<double>> arc_length_histogram_count{};
 
-    std::optional<apsp_global_result<distance_type>> apsp_result{};
-    std::optional<apsp_global_result<inverse_distance_type>> apsp_inverse_result{};
+    std::optional<ApspGlobalResult<distance_type>> apsp_result{};
+    std::optional<ApspGlobalResult<inverse_distance_type>> apsp_inverse_result{};
 
     std::optional<double> average_clustering_coefficient{};
     std::optional<double> average_clustering_coefficient_2{};
@@ -160,9 +189,21 @@ private:
 
     std::optional<AreaConnectivityMap> area_connectivity_strength{};
 
+    std::optional<double> modularity{};
+
     std::optional<std::array<long double, 14>> motifs{};
 
     std::optional<std::tuple<double, double, double, double>> assortativity{};
 
+    std::optional<std::pair<double, double>> reciprocity{};
+
+    std::optional<RichClubResult> rich_club{};
+
+    std::optional<std::pair<double, double>> transitivity{};
+
     std::optional<distance_type> approximate_diameter{};
+
+    std::optional<SccResult> strongly_connected_components{};
+
+    std::optional<flow_type> maximum_flow{};
 };

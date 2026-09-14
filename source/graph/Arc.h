@@ -1,9 +1,9 @@
 #pragma once
 
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -24,14 +24,13 @@ struct InArc {
     [[nodiscard]] friend auto operator<=>(const InArc&, const InArc&) = default;
 
     friend std::ostream& operator<<(std::ostream& out, const InArc& arc) {
-        const auto& [source_rank, source_id, weight] = arc;
-        out << '(' << source_rank << ", " << source_id << ": " << weight << ')';
+        out << '(' << arc.source_rank << ", " << arc.source_id << ": " << arc.weight << ')';
         return out;
     }
 };
 
 /**
- * @brief This class represents an out arc, i.e., a directed edge that end at a node identified by the member variables.
+ * @brief This class represents an out arc, i.e., a directed edge that ends at a node identified by the member variables.
  *		The start is usually identified by the position in a vector and the current MPI rank.
  */
 struct OutArc {
@@ -42,8 +41,7 @@ struct OutArc {
     [[nodiscard]] friend auto operator<=>(const OutArc&, const OutArc&) = default;
 
     friend std::ostream& operator<<(std::ostream& out, const OutArc& arc) {
-        const auto& [target_rank, target_id, weight] = arc;
-        out << '(' << target_rank << ", " << target_id << ": " << weight << ')';
+        out << '(' << arc.target_rank << ", " << arc.target_id << ": " << arc.weight << ')';
         return out;
     }
 };

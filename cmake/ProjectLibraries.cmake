@@ -1,6 +1,11 @@
 # dont clutter the compile_commands file with libraries
 set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 
+# everything fetched here is a dependency, its warnings are none of our business: the
+# -Werror that CMAKE_COMPILE_WARNING_AS_ERROR puts on every target is meant for the code
+# of this project, and a new warning of a newer compiler must not break the build
+set(CMAKE_COMPILE_WARNING_AS_ERROR OFF)
+
 add_library(project_libraries INTERFACE)
 
 include(FetchContent)
@@ -9,7 +14,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(project_libraries INTERFACE Threads::Threads)
 
 if(WIN32)
-  add_compile_options("/openmp:llvm")
+  target_compile_options(project_options INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/openmp:llvm>)
 else()
   find_package(OpenMP)
 endif()
@@ -54,13 +59,13 @@ cmake_policy(SET CMP0077 NEW)
 FetchContent_Declare(
         fmt
         GIT_REPOSITORY https://github.com/fmtlib/fmt
-        GIT_TAG 11.0.2)
+        GIT_TAG 12.2.0)
 
 # spdlog
 FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog
-        GIT_TAG v1.15.0)
+        GIT_TAG v1.17.0)
 
 # range-v3
 FetchContent_Declare(
@@ -95,5 +100,14 @@ set_target_properties(range-v3 PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
         "${range-v3_includes}")
 target_link_libraries(project_libraries INTERFACE range-v3)
 
-# set compile commands back to on
+
+# cpp-utility and mpi-wrapper are header-only and ship with this repository, see
+# external/README.md. SYSTEM, like every other dependency: their warnings are none of
+# our business, and they are deliberately built with a different warning set upstream
+# (-Wuseless-cast, for one, is off there because it does not play nice with std::size_t).
+target_include_directories(project_libraries SYSTEM INTERFACE ${PROJECT_SOURCE_DIR}/external)
+
+
+# set compile commands and warnings as errors back to on
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+unset(CMAKE_COMPILE_WARNING_AS_ERROR)

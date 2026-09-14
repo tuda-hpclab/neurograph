@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -10,20 +10,15 @@
 
 #include "test_arc_counter.h"
 
-#include "metrics/ArcCounter.h"
+#include "metrics/counting/InArcCounter.h"
+#include "metrics/counting/OutArcCounter.h"
 
-#include "mpi-wrapper/MPIInfo.h"
-
-#include <spdlog/spdlog.h>
+#include <mpi-wrapper/core/MPIInfo.h>
 
 #include <iostream>
 
 TEST_F(InArcCounterTest, testStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -37,11 +32,7 @@ TEST_F(InArcCounterTest, testStandard) {
 }
 
 TEST_F(InArcCounterTest, testFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -55,11 +46,7 @@ TEST_F(InArcCounterTest, testFull) {
 }
 
 TEST_F(OutArcCounterTest, testStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -73,11 +60,7 @@ TEST_F(OutArcCounterTest, testStandard) {
 }
 
 TEST_F(OutArcCounterTest, testFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -91,11 +74,7 @@ TEST_F(OutArcCounterTest, testFull) {
 }
 
 TEST_F(InArcCounterTest, testStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -111,11 +90,7 @@ TEST_F(InArcCounterTest, testStandardFourRanks) {
 }
 
 TEST_F(InArcCounterTest, testFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -131,11 +106,7 @@ TEST_F(InArcCounterTest, testFullFourRanks) {
 }
 
 TEST_F(OutArcCounterTest, testStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -151,11 +122,7 @@ TEST_F(OutArcCounterTest, testStandardFourRanks) {
 }
 
 TEST_F(OutArcCounterTest, testFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -168,4 +135,114 @@ TEST_F(OutArcCounterTest, testFullFourRanks) {
 
     const auto total_number_of_out_arcs_global = OutArcCounter::all_count_out_arcs(graph);
     ASSERT_EQ(total_number_of_out_arcs_global, 36 * 35);
+}
+
+TEST_F(InArcCounterTest, testStandardSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph_on_one_rank();
+
+    // Six blocks of 25 intra-block arcs plus 10 ring arcs each, and 4 arcs in the source/sink block.
+    // The value serves as standard for the seven-rank test
+    ASSERT_EQ(InArcCounter::count_in_arcs(graph), 214);
+    ASSERT_EQ(InArcCounter::all_count_in_arcs(graph), 214);
+}
+
+TEST_F(InArcCounterTest, testFullSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph_on_one_rank();
+
+    // Every one of the 63 nodes is connected to every other one: 63 * 62 arcs.
+    // The value serves as standard for the seven-rank test
+    ASSERT_EQ(InArcCounter::count_in_arcs(graph), 3906);
+    ASSERT_EQ(InArcCounter::all_count_in_arcs(graph), 3906);
+}
+
+TEST_F(OutArcCounterTest, testStandardSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph_on_one_rank();
+
+    // The value serves as standard for the seven-rank test
+    ASSERT_EQ(OutArcCounter::count_out_arcs(graph), 214);
+    ASSERT_EQ(OutArcCounter::all_count_out_arcs(graph), 214);
+}
+
+TEST_F(OutArcCounterTest, testFullSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph_on_one_rank();
+
+    // The value serves as standard for the seven-rank test
+    ASSERT_EQ(OutArcCounter::count_out_arcs(graph), 3906);
+    ASSERT_EQ(OutArcCounter::all_count_out_arcs(graph), 3906);
+}
+
+TEST_F(InArcCounterTest, testStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto total_number_of_in_arcs = InArcCounter::count_in_arcs(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(total_number_of_in_arcs, 214);
+    }
+
+    ASSERT_EQ(InArcCounter::all_count_in_arcs(graph), 214);
+}
+
+TEST_F(InArcCounterTest, testFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto total_number_of_in_arcs = InArcCounter::count_in_arcs(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(total_number_of_in_arcs, 3906);
+    }
+
+    ASSERT_EQ(InArcCounter::all_count_in_arcs(graph), 3906);
+}
+
+TEST_F(OutArcCounterTest, testStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto total_number_of_out_arcs = OutArcCounter::count_out_arcs(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(total_number_of_out_arcs, 214);
+    }
+
+    ASSERT_EQ(OutArcCounter::all_count_out_arcs(graph), 214);
+}
+
+TEST_F(OutArcCounterTest, testFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto total_number_of_out_arcs = OutArcCounter::count_out_arcs(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(total_number_of_out_arcs, 3906);
+    }
+
+    ASSERT_EQ(OutArcCounter::all_count_out_arcs(graph), 3906);
 }

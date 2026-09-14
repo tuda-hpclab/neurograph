@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -31,9 +31,10 @@ ArcTransformer::Arcs ArcTransformer::remove_weight_zero(Arcs arcs) {
     for (auto& arcs_from_node : arcs) {
         for (auto it = arcs_from_node.begin(); it != arcs_from_node.end();) {
             if (it->second == 0) {
-                arcs_from_node.erase(it);
+                it = arcs_from_node.erase(it);
+            } else {
+                ++it;
             }
-            ++it;
         }
     }
 

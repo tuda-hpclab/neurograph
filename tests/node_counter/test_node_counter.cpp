@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -12,21 +12,16 @@
 
 #include "Types.h"
 
-#include "metrics/NodeCounter.h"
+#include "metrics/counting/NodeCounter.h"
+#include "metrics/counting/NodeDistributionCounter.h"
 
-#include "mpi-wrapper/MPIInfo.h"
-
-#include <spdlog/spdlog.h>
+#include <mpi-wrapper/core/MPIInfo.h>
 
 #include <iostream>
 #include <vector>
 
 TEST_F(NodeCounterTest, testStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -40,11 +35,7 @@ TEST_F(NodeCounterTest, testStandard) {
 }
 
 TEST_F(NodeCounterTest, testFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -58,11 +49,7 @@ TEST_F(NodeCounterTest, testFull) {
 }
 
 TEST_F(NodeCounterTest, testStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -78,11 +65,7 @@ TEST_F(NodeCounterTest, testStandardFourRanks) {
 }
 
 TEST_F(NodeCounterTest, testFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -98,11 +81,7 @@ TEST_F(NodeCounterTest, testFullFourRanks) {
 }
 
 TEST_F(NodeDistributionCounterTest, testHistogramStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -116,11 +95,7 @@ TEST_F(NodeDistributionCounterTest, testHistogramStandard) {
 }
 
 TEST_F(NodeDistributionCounterTest, testHistogramFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -134,11 +109,7 @@ TEST_F(NodeDistributionCounterTest, testHistogramFull) {
 }
 
 TEST_F(NodeDistributionCounterTest, testHistogramStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -154,11 +125,7 @@ TEST_F(NodeDistributionCounterTest, testHistogramStandardFourRanks) {
 }
 
 TEST_F(NodeDistributionCounterTest, testHistogramFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -171,4 +138,90 @@ TEST_F(NodeDistributionCounterTest, testHistogramFullFourRanks) {
 
     const auto histogram_global = NodeDistributionCounter::all_count_node_distribution_global(graph);
     ASSERT_EQ(histogram_global, std::vector<global_node_id_type>({ 8, 9, 9, 10 }));
+}
+
+TEST_F(NodeCounterTest, testStandardSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph_on_one_rank();
+
+    // Seven blocks of ten nodes each. The value serves as standard for the seven-rank test
+    ASSERT_EQ(NodeCounter::count_nodes(graph), 70);
+    ASSERT_EQ(NodeCounter::all_count_nodes(graph), 70);
+}
+
+TEST_F(NodeCounterTest, testFullSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph_on_one_rank();
+
+    // 8 + 9 + 8 + 10 + 9 + 9 + 10 nodes. The value serves as standard for the seven-rank test
+    ASSERT_EQ(NodeCounter::count_nodes(graph), 63);
+    ASSERT_EQ(NodeCounter::all_count_nodes(graph), 63);
+}
+
+TEST_F(NodeCounterTest, testStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto total_number_nodes = NodeCounter::count_nodes(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(total_number_nodes, 70);
+    }
+
+    ASSERT_EQ(NodeCounter::all_count_nodes(graph), 70);
+}
+
+TEST_F(NodeCounterTest, testFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto total_number_nodes = NodeCounter::count_nodes(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(total_number_nodes, 63);
+    }
+
+    ASSERT_EQ(NodeCounter::all_count_nodes(graph), 63);
+}
+
+TEST_F(NodeDistributionCounterTest, testHistogramStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto histogram = NodeDistributionCounter::all_count_node_distribution(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(histogram, std::vector<node_id_type>({ 10, 10, 10, 10, 10, 10, 10 }));
+    }
+
+    const auto histogram_global = NodeDistributionCounter::all_count_node_distribution_global(graph);
+    ASSERT_EQ(histogram_global, std::vector<global_node_id_type>({ 10, 10, 10, 10, 10, 10, 10 }));
+}
+
+TEST_F(NodeDistributionCounterTest, testHistogramFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto histogram = NodeDistributionCounter::all_count_node_distribution(graph);
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        ASSERT_EQ(histogram, std::vector<node_id_type>({ 8, 9, 8, 10, 9, 9, 10 }));
+    }
+
+    const auto histogram_global = NodeDistributionCounter::all_count_node_distribution_global(graph);
+    ASSERT_EQ(histogram_global, std::vector<global_node_id_type>({ 8, 9, 8, 10, 9, 9, 10 }));
 }

@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -10,20 +10,14 @@
 
 #include "test_betweenness_centrality.h"
 
-#include "metrics/Centrality.h"
+#include "metrics/paths/BetweennessCentrality.h"
 
-#include "mpi-wrapper/MPIInfo.h"
-
-#include <spdlog/spdlog.h>
+#include <mpi-wrapper/core/MPIInfo.h>
 
 #include <iostream>
 
 TEST_F(BetweennessCentralityTest, testStandard) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -36,11 +30,7 @@ TEST_F(BetweennessCentralityTest, testStandard) {
 }
 
 TEST_F(BetweennessCentralityTest, testStandardUU) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -53,11 +43,7 @@ TEST_F(BetweennessCentralityTest, testStandardUU) {
 }
 
 TEST_F(BetweennessCentralityTest, testFull) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -70,11 +56,7 @@ TEST_F(BetweennessCentralityTest, testFull) {
 }
 
 TEST_F(BetweennessCentralityTest, testStandardFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -87,11 +69,7 @@ TEST_F(BetweennessCentralityTest, testStandardFourRanksDummy) {
 }
 
 TEST_F(BetweennessCentralityTest, testStandardUUFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -104,11 +82,7 @@ TEST_F(BetweennessCentralityTest, testStandardUUFourRanksDummy) {
 }
 
 TEST_F(BetweennessCentralityTest, testFullFourRanksDummy) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 1) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 1 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(1)) {
         return;
     }
 
@@ -121,11 +95,7 @@ TEST_F(BetweennessCentralityTest, testFullFourRanksDummy) {
 }
 
 TEST_F(BetweennessCentralityTest, testStandardFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -140,11 +110,7 @@ TEST_F(BetweennessCentralityTest, testStandardFourRanks) {
 }
 
 TEST_F(BetweennessCentralityTest, testStandardUUFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -159,11 +125,7 @@ TEST_F(BetweennessCentralityTest, testStandardUUFourRanks) {
 }
 
 TEST_F(BetweennessCentralityTest, testFullFourRanks) {
-    if (mpiPP::MPIInfo::get_number_ranks_cast() != 4) {
-        if (mpiPP::MPIInfo::is_root_rank()) {
-            spdlog::info("Test only works with 4 MPI ranks.");
-        }
-
+    if (skip_unless_rank_count(4)) {
         return;
     }
 
@@ -173,6 +135,92 @@ TEST_F(BetweennessCentralityTest, testFullFourRanks) {
 
     if (mpiPP::MPIInfo::is_root_rank()) {
         // The values are the corresponding ones from the one-rank version
+        ASSERT_NEAR(average_betweenness_centrality, 0.0, 1e-6);
+    }
+}
+
+TEST_F(BetweennessCentralityTest, testStandardSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph_on_one_rank();
+
+    const auto average_betweenness_centrality = BetweennessCentrality::compute_average_betweenness_centrality(graph);
+
+    // Only the six standard blocks contribute; the four arcs of the source/sink block are direct and
+    // put no node in between. The value serves as standard for the seven-rank test
+    ASSERT_NEAR(average_betweenness_centrality, 74.447050803480930, 1e-6);
+}
+
+TEST_F(BetweennessCentralityTest, testStandardUUSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph_on_one_rank();
+
+    const auto average_betweenness_centrality = BetweennessCentrality::compute_average_betweenness_centrality(graph);
+
+    // The value serves as standard for the seven-rank test
+    ASSERT_NEAR(average_betweenness_centrality, 39.171428571428571, 1e-6);
+}
+
+TEST_F(BetweennessCentralityTest, testFullSevenRanksDummy) {
+    if (skip_unless_rank_count(1)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph_on_one_rank();
+
+    const auto average_betweenness_centrality = BetweennessCentrality::compute_average_betweenness_centrality(graph);
+
+    // The graph is complete, so every pair is joined by a single arc and no node lies in between.
+    // The value serves as standard for the seven-rank test
+    ASSERT_NEAR(average_betweenness_centrality, 0.0, 1e-6);
+}
+
+TEST_F(BetweennessCentralityTest, testStandardSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_seven_rank_graph();
+
+    const auto average_betweenness_centrality = BetweennessCentrality::compute_average_betweenness_centrality(graph);
+
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        // The value is the corresponding one from the one-rank version
+        ASSERT_NEAR(average_betweenness_centrality, 74.447050803480930, 1e-6);
+    }
+}
+
+TEST_F(BetweennessCentralityTest, testStandardUUSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_standard_uu_seven_rank_graph();
+
+    const auto average_betweenness_centrality = BetweennessCentrality::compute_average_betweenness_centrality(graph);
+
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        // The value is the corresponding one from the one-rank version
+        ASSERT_NEAR(average_betweenness_centrality, 39.171428571428571, 1e-6);
+    }
+}
+
+TEST_F(BetweennessCentralityTest, testFullSevenRanks) {
+    if (skip_unless_rank_count(7)) {
+        return;
+    }
+
+    const auto graph = get_full_seven_rank_graph();
+
+    const auto average_betweenness_centrality = BetweennessCentrality::compute_average_betweenness_centrality(graph);
+
+    if (mpiPP::MPIInfo::is_root_rank()) {
+        // The value is the corresponding one from the one-rank version
         ASSERT_NEAR(average_betweenness_centrality, 0.0, 1e-6);
     }
 }

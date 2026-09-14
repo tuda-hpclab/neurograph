@@ -1,7 +1,7 @@
 /*
- * This file is part of the ScalableGraphAlgorithm software developed at Technical University Darmstadt.
+ * This file is part of the neurograph software developed at Technical University Darmstadt.
  *
- * Copyright (c) 2024, Technical University of Darmstadt, Germany
+ * Copyright (c) 2022-2026, Technical University of Darmstadt, Germany
  *
  * This software may be modified and distributed under the terms of a BSD-style license.
  * See the LICENSE file in the base directory for details.
@@ -10,15 +10,36 @@
 
 #include "MetricStore.h"
 
-#include "mpi-wrapper/MPIInfo.h"
-
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/std.h>
 
+#include <mpi-wrapper/core/MPIInfo.h>
+
+#include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <sstream>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+namespace {
+
+template <typename Histogram>
+void output_histogram(std::ostream& stream, const Histogram& histogram) {
+    const auto borders = histogram.get_borders();
+    const auto counts = histogram.get_counts();
+
+    for (auto i = std::size_t{ 0 }; i < borders.size(); ++i) {
+        const auto end = i + 1 < borders.size() ? borders[i + 1] : std::numeric_limits<std::remove_cvref_t<decltype(borders[i])>>::max();
+        stream << i << ". bin: " << borders[i] << '-' << end << ": " << counts[i] << '\n';
+    }
+}
+
+} // namespace
 
 void MetricStore::output(const std::filesystem::path& output_path) const {
     if (!mpiPP::MPIInfo::is_root_rank()) {
@@ -114,10 +135,10 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
 
         auto ss = std::stringstream{};
         fmt::print(ss, "Histogram of in degrees:\n");
-        ss << in_degree_hist;
+        output_histogram(ss, in_degree_hist);
 
         fmt::print(ss, "Histogram of out degrees:\n");
-        ss << out_degree_hist;
+        output_histogram(ss, out_degree_hist);
 
         const auto output = ss.str();
         std::cout << output;
@@ -137,10 +158,10 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
 
         auto ss = std::stringstream{};
         fmt::print(ss, "Histogram of in degrees:\n");
-        ss << in_degree_hist;
+        output_histogram(ss, in_degree_hist);
 
         fmt::print(ss, "Histogram of out degrees:\n");
-        ss << out_degree_hist;
+        output_histogram(ss, out_degree_hist);
 
         const auto output = ss.str();
         std::cout << output;
@@ -176,7 +197,7 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
         auto ss = std::stringstream{};
         fmt::print(ss, "The pair-distances histogram is given by:\n");
 
-        ss << distances;
+        output_histogram(ss, distances);
 
         const auto output = ss.str();
         std::cout << output;
@@ -196,7 +217,7 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
         auto ss = std::stringstream{};
         fmt::print(ss, "The pair-distances histogram is given by:\n");
 
-        ss << distances;
+        output_histogram(ss, distances);
 
         const auto output = ss.str();
         std::cout << output;
@@ -231,7 +252,7 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
 
         auto ss = std::stringstream{};
         fmt::print(ss, "The arc-length histogram is given by:\n");
-        ss << hist;
+        output_histogram(ss, hist);
 
         const auto output = ss.str();
         std::cout << output;
@@ -250,7 +271,7 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
 
         auto ss = std::stringstream{};
         fmt::print(ss, "The arc-length histogram is given by:\n");
-        ss << hist;
+        output_histogram(ss, hist);
 
         const auto output = ss.str();
         std::cout << output;
@@ -360,10 +381,14 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
 
         const auto& area_connectivity = area_connectivity_strength.value();
 
+        // The map is unordered, so sort the connections to keep the output deterministic.
+        auto sorted_connections = std::vector<std::pair<std::pair<std::string, std::string>, weight_type>>(area_connectivity.begin(), area_connectivity.end());
+        std::ranges::sort(sorted_connections, [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+
         auto ss = std::stringstream{};
         fmt::print(ss, "The area connectivity is given by:\n");
         auto nr = std::size_t{ 0 };
-        for (const auto& [key, value] : area_connectivity) {
+        for (const auto& [key, value] : sorted_connections) {
             fmt::print(ss, "Connection {}: weight = {} ({} --> {})\n", nr, value, key.first, key.second);
             nr++;
         }
@@ -372,6 +397,22 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
         std::cout << output;
 
         const auto output_file_path = output_path / "area_connectivity.txt";
+        auto output_file = std::ofstream{ output_file_path };
+        output_file << output;
+    };
+
+    const auto output_modularity = [this, output_path]() {
+        if (!modularity) {
+            return;
+        }
+
+        auto ss = std::stringstream{};
+        fmt::print(ss, "The modularity is: {}\n", modularity.value());
+
+        const auto output = ss.str();
+        std::cout << output;
+
+        const auto output_file_path = output_path / "modularity.txt";
         auto output_file = std::ofstream{ output_file_path };
         output_file << output;
     };
@@ -419,6 +460,72 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
         output_file << output;
     };
 
+    const auto output_reciprocity = [this, output_path]() {
+        if (!reciprocity) {
+            return;
+        }
+
+        const auto& [fraction_mutual_arcs, coefficient] = reciprocity.value();
+
+        auto ss = std::stringstream{};
+        fmt::print(ss, "The reciprocity is: {}\n", fraction_mutual_arcs);
+        fmt::print(ss, "The density-corrected reciprocity coefficient is: {}\n", coefficient);
+
+        const auto output = ss.str();
+        std::cout << output;
+
+        const auto output_file_path = output_path / "reciprocity.txt";
+        auto output_file = std::ofstream{ output_file_path };
+        output_file << output;
+    };
+
+    const auto output_rich_club = [this, output_path]() {
+        if (!rich_club) {
+            return;
+        }
+
+        const auto& [coefficients, club_sizes, club_arc_counts] = rich_club.value();
+
+        auto ss = std::stringstream{};
+
+        if (coefficients.empty()) {
+            fmt::print(ss, "The rich-club coefficient is undefined for every degree threshold, because fewer than two nodes have an arc\n");
+        } else {
+            fmt::print(ss, "The rich-club coefficients are given by:\n");
+
+            for (auto threshold = std::size_t{ 0 }; threshold < coefficients.size(); ++threshold) {
+                fmt::print(ss, "Degree above: {}\tMembers: {}\tArcs: {}\tCoefficient: {}\n", threshold, club_sizes[threshold], club_arc_counts[threshold],
+                           coefficients[threshold]);
+            }
+        }
+
+        const auto output = ss.str();
+        std::cout << output;
+
+        const auto output_file_path = output_path / "rich_club.txt";
+        auto output_file = std::ofstream{ output_file_path };
+        output_file << output;
+    };
+
+    const auto output_transitivity = [this, output_path]() {
+        if (!transitivity) {
+            return;
+        }
+
+        const auto& [transitivity_cycle, transitivity_out] = transitivity.value();
+
+        auto ss = std::stringstream{};
+        fmt::print(ss, "The transitivity (i->j->k->i) is: {}\n", transitivity_cycle);
+        fmt::print(ss, "The transitivity (i->j->k<-i) is: {}\n", transitivity_out);
+
+        const auto output = ss.str();
+        std::cout << output;
+
+        const auto output_file_path = output_path / "transitivity.txt";
+        auto output_file = std::ofstream{ output_file_path };
+        output_file << output;
+    };
+
     const auto output_approximate_diameter = [this, output_path]() {
         if (!approximate_diameter) {
             return;
@@ -431,6 +538,50 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
         std::cout << output;
 
         const auto output_file_path = output_path / "approximate_diameter.txt";
+        auto output_file = std::ofstream{ output_file_path };
+        output_file << output;
+    };
+
+    const auto output_strongly_connected_components = [this, output_path]() {
+        if (!strongly_connected_components) {
+            return;
+        }
+
+        const auto& [number_components, largest_component_size, component_sizes] = strongly_connected_components.value();
+
+        // The map is unordered, so sort the sizes to keep the output deterministic.
+        auto sorted_sizes = std::vector<std::pair<global_node_id_type, global_node_id_type>>(component_sizes.begin(), component_sizes.end());
+        std::ranges::sort(sorted_sizes, [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+
+        auto ss = std::stringstream{};
+        fmt::print(ss, "The number of strongly connected components is: {}\n", number_components);
+        fmt::print(ss, "The largest strongly connected component consists of {} nodes\n", largest_component_size);
+        fmt::print(ss, "The components were distributed as follows:\n");
+
+        for (const auto& [size, occurences] : sorted_sizes) {
+            fmt::print(ss, "Size: {}\tOccurences: {}\n", size, occurences);
+        }
+
+        const auto output = ss.str();
+        std::cout << output;
+
+        const auto output_file_path = output_path / "strongly_connected_components.txt";
+        auto output_file = std::ofstream{ output_file_path };
+        output_file << output;
+    };
+
+    const auto output_maximum_flow = [this, output_path]() {
+        if (!maximum_flow) {
+            return;
+        }
+
+        auto ss = std::stringstream{};
+        fmt::print(ss, "The maximum flow is: {}\n", maximum_flow.value());
+
+        const auto output = ss.str();
+        std::cout << output;
+
+        const auto output_file_path = output_path / "maximum_flow.txt";
         auto output_file = std::ofstream{ output_file_path };
         output_file << output;
     };
@@ -452,7 +603,13 @@ void MetricStore::output(const std::filesystem::path& output_path) const {
     output_clustering_coefficients();
     output_average_betweenness_centrality();
     output_area_connectivity();
+    output_modularity();
     output_network_motifs();
     output_assortativity();
+    output_reciprocity();
+    output_rich_club();
+    output_transitivity();
     output_approximate_diameter();
+    output_strongly_connected_components();
+    output_maximum_flow();
 }
